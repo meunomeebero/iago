@@ -59,6 +59,7 @@ func ExecuteCLI() {
 	help := flag.Bool("help", false, "Show help")
 	pk := flag.String("pk", "", "OpenAI API Secret Key")
 	prompt := flag.String("prompt", "", "Prompt to send to OpenAI")
+	ytb := flag.Bool("ytb", false, "use youtube data")
 
 	flag.Parse()
 
@@ -78,7 +79,24 @@ func ExecuteCLI() {
 	}
 
 	if *prompt != "" {
-		res := AnswerQuestion(*prompt)
+		text := *prompt
+
+		if *ytb {
+			data := GooglePrint()
+
+			res := AnswerQuestion(
+				fmt.Sprintf(
+					"based on this array of data I have fetched from youtube API: \n %+v\n%s",
+					data,
+					text,
+				),
+			)
+
+			fmt.Println(res)
+			return
+		}
+
+		res := AnswerQuestion(text)
 		fmt.Println(res)
 		return
 	}
