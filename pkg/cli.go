@@ -9,7 +9,7 @@ import (
 )
 
 func printHelp() {
-	fmt.Println("Iago is a CLI for OpenAI's GPT-3 API")
+	fmt.Println("Iago is a CLI for OpenAI's GPT API")
 	fmt.Println("Usage: iago [flags]")
 	fmt.Println("Flags:")
 	fmt.Println("  -help\t\tShow this help message")
@@ -60,6 +60,8 @@ func ExecuteCLI() {
 	pk := flag.String("pk", "", "OpenAI API Secret Key")
 	prompt := flag.String("prompt", "", "Prompt to send to OpenAI")
 	ytb := flag.Bool("ytb", false, "use youtube data")
+	comments := flag.Bool("cmt", false, "use comments data")
+	subs := flag.Bool("sub", false, "use subscribers data")
 
 	flag.Parse()
 
@@ -80,16 +82,20 @@ func ExecuteCLI() {
 
 	if *prompt != "" {
 		text := *prompt
+		var data interface{}
 
 		if *ytb {
-			data := GooglePrint()
+			if *subs {
+				data = GetSubscribersComments()
+			}
+
+			if *comments {
+				data = GetChannelComments()
+			}
 
 			res := AnswerQuestion(
-				fmt.Sprintf(
-					"based on this array of data I have fetched from youtube API: \n %+v\n%s",
-					data,
-					text,
-				),
+				fmt.Sprintf("%v", data),
+				text,
 			)
 
 			fmt.Println(res)

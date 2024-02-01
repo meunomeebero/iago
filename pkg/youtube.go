@@ -16,12 +16,11 @@ import (
 )
 
 type Comment struct {
-	AuthorDisplayName     string
-	AuthorProfileImageUrl string
-	TextDisplay           string
+	AuthorDisplayName string
+	Comments          []string
 }
 
-func GooglePrint() []Comment {
+func getComments() []youtube.CommentThreadListResponse {
 	ctx := context.Background()
 
 	credentialsFile := "./google.json"
@@ -81,27 +80,79 @@ func GooglePrint() []Comment {
 		allComments = append(allComments, *comment)
 	}
 
-	res := formatComments(allComments)
-
-	return res
+	return allComments
 }
 
-func formatComments(
-	comments []youtube.CommentThreadListResponse,
-) []Comment {
-	res := make([]Comment, len(comments))
+func GetSubscribersComments() []Comment {
+	comments := getComments()
+
+	authorToComments := make(map[string][]string)
+	formattedComment := make([]Comment, 0)
 
 	for _, c := range comments {
 		for _, i := range c.Items {
-			res = append(res, Comment{
-				AuthorDisplayName:     i.Snippet.TopLevelComment.Snippet.AuthorDisplayName,
-				AuthorProfileImageUrl: i.Snippet.TopLevelComment.Snippet.AuthorProfileImageUrl,
-				TextDisplay:           i.Snippet.TopLevelComment.Snippet.TextDisplay,
-			})
+			authorUsername := i.Snippet.TopLevelComment.Snippet.AuthorDisplayName
+			authorToComments[authorUsername] = append(authorToComments[authorUsername], i.Snippet.TopLevelComment.Snippet.TextDisplay)
 		}
 	}
 
-	return res
+	for k, v := range authorToComments {
+		formattedComment = append(formattedComment, Comment{
+			AuthorDisplayName: k,
+			Comments:          v,
+		})
+	}
+
+	return formattedComment
+}
+
+func GetChannelComments() []string {
+	comments := getComments()
+
+	formattedComments := make([]string, 0)
+
+	for _, c := range comments {
+		for _, i := range c.Items {
+			formattedComments = append(formattedComments, i.Snippet.TopLevelComment.Snippet.TextDisplay)
+		}
+	}
+
+	return formattedComments
+}
+
+func GetMostSaidWord() (string, int) {
+	comments := GetChannelComments()
+
+	words := make(map[string]int)
+
+	wordsToFilter := map[string]bool{
+		"que": false,
+		" ":   false,
+	}
+
+	for _, c := range comments {
+		commentWords := strings.Split(c, " ")
+
+		for _, w := range commentWords {
+			if len(w) > 1 && wordsToFilter[w] {
+				lowerWord := strings.ToLower(w)
+
+				words[lowerWord]++
+			}
+		}
+	}
+
+	var mostSaidWord string
+	var timesSaid int
+
+	for k, v := range words {
+		if v > timesSaid {
+			timesSaid = v
+			mostSaidWord = k
+		}
+	}
+
+	return mostSaidWord, timesSaid
 }
 
 func getVideoComments(

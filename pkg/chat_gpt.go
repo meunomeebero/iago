@@ -18,28 +18,37 @@ type _ChatAnswer struct {
 	} `json:"choices"`
 }
 
-type RequestPayload struct {
-	Model    string `json:"model"`
-	Messages []struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	} `json:"messages"`
+type RequestPayloadMessages struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }
 
-func AnswerQuestion(prompt string) string {
+type RequestPayload struct {
+	Model    string                   `json:"model"`
+	Messages []RequestPayloadMessages `json:"messages"`
+}
+
+func AnswerQuestion(prompts ...string) string {
 	// Create the payload using a struct.
 	payload := RequestPayload{
 		Model: "gpt-4",
-		Messages: []struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
-		}{
+		Messages: []RequestPayloadMessages{
 			{
-				Role:    "system",
-				Content: prompt,
+				Role: "system",
 			},
 		},
 	}
+
+	for _, r := range prompts {
+		payload.Messages = append(payload.Messages, RequestPayloadMessages{
+			Role:    "user",
+			Content: r,
+		})
+	}
+
+	fp, _ := json.Marshal(payload)
+
+	utils.CreateJSONFile("comments.json", fp)
 
 	// Marshal the payload into JSON.
 	data, err := json.Marshal(payload)
